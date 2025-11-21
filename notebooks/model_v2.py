@@ -1,6 +1,8 @@
-#Improved CNN model model_v2.py prepared by Suraj Kumar Singh
+################################################################
+# Improved CNN model model_v2.py prepared by Suraj Kumar Singh #
+################################################################
 
-#Importing all the necessary packages
+# IMPORT NECESSARY PACKAGES
 import os
 import json
 import torch
@@ -14,20 +16,18 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dropout, BatchNormalization, Dense
 
-#Static Label Data
-labels=['Cat', 'Dog']
-label_mapping = {'cat':0, 'dog':1}
+# STATIC DATA LABELS
+LABELS=['Cat', 'Dog']
+LABEL_MAP = {'cat':0, 'dog':1}
 
-#Downloading & Testing the Dataset
+# IMPORT & TEST REQUIRED DATASET
 od.download("https://www.kaggle.com/competitions/dogs-vs-cats-redux-kernels-edition")
 data = pd.read_csv("/content/dogs-vs-cats-redux-kernels-edition/sample_submission.csv")
 print(data)
-
-#Unzipping the Dataset
 !unzip /content/dogs-vs-cats-redux-kernels-edition/train.zip
 !unzip /content/dogs-vs-cats-redux-kernels-edition/test.zip
 
-#Preparing the Labelled Train data
+# PREPARE LABELLED TRAIN DATA
 image_dir = '/content/train'
 filenames = os.listdir(image_dir)
 labels = [x.split('.')[0] for x in filenames]
@@ -37,8 +37,10 @@ data = pd.DataFrame({
     }
 )
 
-#Creating the Training, Validating and Testing Dataset
-#70% train data; 15% validation data and 15% test data
+# SPLITTING DATASET AMONG TRAIN, VALIDATE & TEST DATASET
+# 70% : TRAINING DATA ; 
+# 15% : VALIDATION DATA &
+# 15% : TESTING DATA
 X_train, temp_data = train_test_split(
     data,
     test_size=0.3,
@@ -53,12 +55,12 @@ X_val, test_data = train_test_split(
     random_state=42
 )
 
-#Standardizing the Images
+# IMAGE ARGUMENT STANDARDS
 image_size = 128  
 bat_size = 32     
 channel = 3       
 
-#Augumenting the Training Data Generator
+# TRAINING DATASET AUGUMENTATION
 train_datagen = ImageDataGenerator(
             rotation_range=15,
             width_shift_range=0.2,
@@ -69,7 +71,7 @@ train_datagen = ImageDataGenerator(
             horizontal_flip=True,
             rescale=1/255)
 
-#Preparing Training and Validation Image Data for the Model
+# PREPARING TRAINING & VALIDATION DATA FOR MODEL
 train_generator = train_datagen.flow_from_dataframe(X_train,
                                                     directory = 'train/',
                                                     x_col= 'filename',
@@ -86,7 +88,7 @@ val_generator = test_datagen.flow_from_dataframe(X_val,
                                                  shuffle=False
                                                 )
                                                 
-#Creating the Model and checking the Layers
+# CREATING THE MODEL WITH LAYERS
 model = Sequential()
 
 model.add(Conv2D(32,(3,3),activation='relu',input_shape = (image_size,image_size,channel)))
@@ -118,7 +120,7 @@ model.add(Dense(2,activation='softmax'))
 
 model.summary()
 
-#Preparing Reducing Learning Rate and Early Stopping
+# IMPLEMENTING LEARNING RATE REDUCTION & EARLY STOPPING
 learning_rate_reduction = ReduceLROnPlateau(
     monitor = 'val_accuracy',
     patience = 2,
@@ -133,14 +135,14 @@ early_stopping = EarlyStopping(
     verbose = 0
 )
 
-#Configuring the model for training and evaluation
+# CONFIGURING THE MODEL FOR EVALUATION
 model.compile(
     optimizer = 'adam', 
     loss = 'binary_crossentropy', 
     metrics = ['accuracy']
 )
 
-#Training the model
+# TRAINING THE MODEL ON TRAINING & VALIDATION DATASET 
 cat_dog = model.fit(
     train_generator, 
     validation_data = val_generator, 
@@ -151,7 +153,7 @@ cat_dog = model.fit(
     epochs = 5
 )
 
-#Preparing the Testing Data Set
+# PREPARE TEST DATASET
 test_generator = test_datagen.flow_from_dataframe(
     X_test,
     directory = "test/",
@@ -163,21 +165,19 @@ test_generator = test_datagen.flow_from_dataframe(
     shuffle=False
 )
 
-#Predicting the Test results from the model
-X_test['label'] = X_test['label'].map(label_mapping)
+# PREDICTING THE RESULTS FROM THE MODEL
+X_test['label'] = X_test['label'].map(LABEL_MAP)
 y_test_true = X_test['label'].values
 
 test_predict = model.predict(test_generator,verbose = 0)
 y_test_pred = np.argmax(test_predict, axis=1)
         
-#Checking the metrics for the model
-report_dict = classification_report(y_test_true, y_test_pred, target_names=labels, output_dict=True)
+# MODEL METRICS
+report_dict = classification_report(y_test_true, y_test_pred, target_names=LABELS, output_dict=True)
 json_report = json.dumps(report_dict, indent=4)
 
+# SAVING THE MODEL & METRICS
 with open('metrics_v2.json', 'w') as f:
         f.write(json_report)
-
-#Save the Model weights
 model.save('model_v2.keras')
 
-#Successfully completed and  saved the CNN Model
