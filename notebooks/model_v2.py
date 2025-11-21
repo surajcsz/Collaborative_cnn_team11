@@ -181,3 +181,4 @@ with open('metrics_v2.json', 'w') as f:
         f.write(json_report)
 model.save('model_v2.keras')
 
+# MODEL COMPLETED 
